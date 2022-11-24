@@ -104,33 +104,100 @@ def summon_menu(material, spirit, tome):
                  '\t5 - Arbalist\n'
                  '\t0 - Go Back\n'
                  '\t>>> ')
+    quant_msg = ('Choose an option:\n'
+                '\t1 - Summon 1x\n'
+                '\t2 - Summon 10x\n'
+                '\t3 - Summon 100x\n'
+                '\t0 - Go Back\n'
+                '\t>>> ')
+    summon_material, summon_spirit, summon_tome = [], [], [[] for _ in range(5)]
+    for grade in material:
+        for item, chance in material[grade]:
+            summon_material.append((chance, f'{grade} {item}'))
+    summon_material.sort()
+    for grade in spirit:
+        for item, chance in spirit[grade]:
+            summon_spirit.append((chance, f'{grade} {item}'))
+    summon_spirit.sort()
+    for i, t in enumerate(tome):
+        for grade in t:
+            for item, chance in t[grade]:
+                summon_tome[i].append((chance, f'{grade} {item}'))
+        summon_tome[i].sort()
     while (c := input(summon_msg)) != '0':
         try:
             c = int(c)
         except ValueError:
             print('You must enter a number!\n')
             continue
+        summoned_items = defaultdict(lambda: 0)
         if c == 1:
             print('>> Dragon Material Summon<<\n')
+            low, high = 0, summon_material[-1][0]
+            try:
+                cl = int(input(quant_msg))
+            except:
+                print('\tInvalid option!\n')
+                continue
+            if cl <= 0 or cl > 3:
+                if cl != 0:
+                    print('\tInvalid option!\n')
+                continue
+            x = [1, 10, 100][cl - 1]
+            for i in range(x):
+                r = random.uniform(low, high)  # generate a new random number
+                for chance, item in summon_material:
+                    if r <= chance:  # compare the random number with the summon chances
+                        # print(f'You just summoned {item}!')
+                        summoned_items[f'{item}'] += 1
+                        break
+            print(f'***Summon {x}x Results***')
+            for item in summoned_items:
+                if summoned_items[item] > 0:
+                    print(f'   -{item} {summoned_items[item]}x')
+
         elif c == 2:
             print('>> Spirit Summon<<\n')
+            low, high = 0, summon_spirit[-1][0]
+            try:
+                cl = int(input(quant_msg))
+            except:
+                print('\tInvalid option!\n')
+                continue
+            if cl <= 0 or cl > 3:
+                if cl != 0:
+                    print('\tInvalid option!\n')
+                continue
+            x = [1, 10, 100][cl - 1]
+            for i in range(x):
+                r = random.uniform(low, high)  # generate a new random number
+                for chance, item in summon_spirit:
+                    if r <= chance:  # compare the random number with the summon chances
+                        # print(f'You just summoned {item}!')
+                        summoned_items[f'{item}'] += 1
+                        break
+            print(f'***Summon {x}x Results***')
+            for item in summoned_items:
+                if summoned_items[item] > 0:
+                    print(f'   -{item} {summoned_items[item]}x')
+
         elif c == 3:
             print('>> Skill Tome Summon<<\n')
             try:
                 cl = int(input(class_msg))
             except:
-                print('Invalid option!\n')
+                print('\tInvalid option!\n')
                 continue
             if cl == 1:
-                print('\t>>> Warrior Skill Tome')
+                print('\t\t>>> Warrior Skill Tome')
             elif cl == 2:
-                print('\t>>> Sorcerer Skill Tome')
+                print('\t\t>>> Sorcerer Skill Tome')
             elif cl == 3:
-                print('\t>>> Taoist Skill Tome')
+                print('\t\t>>> Taoist Skill Tome')
             elif cl == 4:
-                print('\t>>> Lancer Skill Tome')
+                print('\t\t>>> Lancer Skill Tome')
             elif cl == 5:
-                print('\t>>> Arbalist Skill Tome')
+                print('\t\t>>> Arbalist Skill Tome')
         else:
             print('Invalid option!\n')
 
@@ -149,6 +216,9 @@ def main():
         material, spirit, tome = summoning(browser)
         browser.quit()
         summon_menu(material, spirit, tome)    
+        # print(material)
+        # print(spirit)
+        # print(tome)
 
 
 if __name__ == '__main__':
