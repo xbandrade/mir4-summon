@@ -2,21 +2,17 @@ from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, WebDriverException, NoSuchWindowException
+from selenium.common.exceptions import WebDriverException, NoSuchWindowException
 from collections import defaultdict
 import re
 import random
 
 
-def summoning(browser, print_items=False):
+def scrape(browser, classes, print_items=False):
     grades = {'Uncommon', 'Rare', 'Epic', 'Legendary'}
-    classes = ['Warrior', 'Sorcerer', 'Taoist', 'Lancer', 'Arbalist']
     material = defaultdict(lambda: [])
-    material_rarity = defaultdict(lambda: 0)
     spirit = defaultdict(lambda: [])
-    spirit_rarity = defaultdict(lambda: 0)
     tome = [defaultdict(lambda: []) for _ in range(len(classes))]
-    tome_rarity = [defaultdict(lambda: 0) for _ in range(len(classes))]
     matches = browser.find_elements(By.TAG_NAME, 'tr')
     curr_grade = None
     class_counter = -1
@@ -32,16 +28,13 @@ def summoning(browser, print_items=False):
                 f.write(f'{name}\n')
                 if 'Material' in name:
                     curr_dict = material
-                    curr_rarity = material_rarity
                 elif 'Spirit' in name:
                     curr_dict = spirit
-                    curr_rarity = spirit_rarity
                 elif 'Tome' in name:
                     continue
                 elif name in classes:
                     class_counter += 1
                     curr_dict = tome[class_counter]
-                    curr_rarity = tome_rarity[class_counter]
                 curr_sum = 0
                 continue
             try:
@@ -50,8 +43,6 @@ def summoning(browser, print_items=False):
                     continue
                 if t1 in grades:
                     curr_grade = t1
-                    t2 = match.find_element(By.XPATH, r'./td[2]').text  # grade chance
-                    curr_rarity[t1] = round(float(t2[:-1])/100, 6)
                     t3 = match.find_element(By.XPATH, r'./td[3]').text
                     t3 = ' '.join(t3.split()[1:])  # item name without grade
                     t5 = match.find_element(By.XPATH, r'./td[5]').text
@@ -88,7 +79,7 @@ def summoning(browser, print_items=False):
     return (material, spirit, tome)
 
 
-def summon_menu(material, spirit, tome):
+def summon_menu(classes, material, spirit, tome):
     print('~~~~ MIR4 Summoning ~~~~')
     summon_msg = ('Choose a summon type:\n'
                   '\t1 - Dragon Material\n'
@@ -132,18 +123,18 @@ def summon_menu(material, spirit, tome):
             continue
         summoned_items = defaultdict(lambda: 0)
         if c == 1:
-            print('>> Dragon Material Summon<<\n')
+            print('\n>> Dragon Material Summon<<')
             low, high = 0, summon_material[-1][0]
             try:
-                cl = int(input(quant_msg))
+                quant = int(input(quant_msg))
             except:
                 print('\tInvalid option!\n')
                 continue
-            if cl <= 0 or cl > 3:
-                if cl != 0:
+            if quant <= 0 or quant > 3:
+                if quant != 0:
                     print('\tInvalid option!\n')
                 continue
-            x = [1, 10, 100][cl - 1]
+            x = [1, 10, 100][quant - 1]
             for i in range(x):
                 r = random.uniform(low, high)  # generate a new random number
                 for chance, item in summon_material:
@@ -157,18 +148,18 @@ def summon_menu(material, spirit, tome):
                     print(f'   -{item} {summoned_items[item]}x')
 
         elif c == 2:
-            print('>> Spirit Summon<<\n')
+            print('\n>> Spirit Summon<<')
             low, high = 0, summon_spirit[-1][0]
             try:
-                cl = int(input(quant_msg))
+                quant = int(input(quant_msg))
             except:
                 print('\tInvalid option!\n')
                 continue
-            if cl <= 0 or cl > 3:
-                if cl != 0:
+            if quant <= 0 or quant > 3:
+                if quant != 0:
                     print('\tInvalid option!\n')
                 continue
-            x = [1, 10, 100][cl - 1]
+            x = [1, 10, 100][quant - 1]
             for i in range(x):
                 r = random.uniform(low, high)  # generate a new random number
                 for chance, item in summon_spirit:
@@ -182,22 +173,37 @@ def summon_menu(material, spirit, tome):
                     print(f'   -{item} {summoned_items[item]}x')
 
         elif c == 3:
-            print('>> Skill Tome Summon<<\n')
+            print('\n>> Skill Tome Summon<<')
             try:
                 cl = int(input(class_msg))
             except:
                 print('\tInvalid option!\n')
                 continue
-            if cl == 1:
-                print('\t\t>>> Warrior Skill Tome')
-            elif cl == 2:
-                print('\t\t>>> Sorcerer Skill Tome')
-            elif cl == 3:
-                print('\t\t>>> Taoist Skill Tome')
-            elif cl == 4:
-                print('\t\t>>> Lancer Skill Tome')
-            elif cl == 5:
-                print('\t\t>>> Arbalist Skill Tome')
+            if 1 <= cl <= len(classes):
+                print(f'\n>>> {classes[cl - 1]} Skill Tome')
+                low, high = 0, summon_tome[cl - 1][-1][0]
+                try:
+                    quant = int(input(quant_msg))
+                except:
+                    print('\tInvalid option!\n')
+                    continue
+                if quant <= 0 or quant > 3:
+                    if quant != 0:
+                        print('\tInvalid option!\n')
+                    continue
+                x = [1, 10, 100][quant - 1]
+                for i in range(x):
+                    r = random.uniform(low, high)  # generate a new random number
+                    for chance, item in summon_tome[cl - 1]:
+                        if r <= chance:  # compare the random number with the summon chances
+                            summoned_items[f'{item}'] += 1
+                            break
+                print(f'\n***Summon {x}x Results***')
+                for item in summoned_items:
+                    if summoned_items[item] > 0:
+                        print(f'   -{item} {summoned_items[item]}x')
+                print()
+                
         else:
             print('Invalid option!\n')
 
@@ -206,6 +212,7 @@ def main():
     service = Service(ChromeDriverManager().install())
     website = 'https://forum.mir4global.com/post/67'
     try:
+        classes = ['Warrior', 'Sorcerer', 'Taoist', 'Lancer', 'Arbalist']
         options = webdriver.ChromeOptions()
         options.add_experimental_option('excludeSwitches', ['enable-logging'])
         browser = webdriver.Chrome(service=service, options=options)
@@ -213,12 +220,9 @@ def main():
     except (WebDriverException, NoSuchWindowException):
         print('Browser not found. Exiting...')
     else:
-        material, spirit, tome = summoning(browser)
+        material, spirit, tome = scrape(browser, classes)
         browser.quit()
-        summon_menu(material, spirit, tome)    
-        # print(material)
-        # print(spirit)
-        # print(tome)
+        summon_menu(classes, material, spirit, tome)
 
 
 if __name__ == '__main__':
