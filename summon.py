@@ -1,13 +1,55 @@
 import random
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 
-def summon_menu(classes, material, spirit, tome):
+def summon(category, cls=None):
+    quant = get_quant()
+    if not quant:
+        return
+    possible_summons, weights = category.get_weights(cls)
+    summons = random.choices(possible_summons, weights=weights, k=[0, 1, 11, 110][quant])
+    show_summon_results(Counter(summons), [0, 1, 11, 110][quant])
+
+
+def get_quant():
+    quant_msg = ('Choose an option:\n'
+                '\t1 - Summon 1x\n'
+                '\t2 - Summon 10 + 1x\n'
+                '\t3 - Summon 100 + 10x\n'
+                '\t0 - Go Back\n'
+                '\t>>> ')
+    try:
+        quant = int(input(quant_msg))
+        if quant <= 0 or quant > 3:
+            raise ValueError('Invalid option!')
+    except ValueError as e:
+        print(f'\t{e}\n')
+    else:
+        return quant
+    return 0
+
+
+def show_summon_results(summons, quant):
+    print(f'\n***Summon {quant}x Results***')
+    for count in summons:
+        print(f'\t-{count} {summons[count]}x')
+    print('\n')
+
+
+def summon_menu(data):
+    class_id = {
+        1: 'Warrior',
+        2: 'Sorcerer',
+        3: 'Taoist',
+        4: 'Lancer',
+        5: 'Arbalist',
+    }
     summon_msg = ('Choose a summon type:\n'
                   '\t1 - Dragon Material\n'
                   '\t2 - Spirit\n'
-                  '\t3 - Skill Tome\n'
-                  '\t0 - Exit\n'
+                  '\t3 - Legendary Spirit\n'
+                  '\t4 - Skill Tome\n'
+                  '\t0 - Go Back\n'
                   '\t>>> ')
     class_msg = ('Choose a class:\n'
                  '\t1 - Warrior\n'
@@ -17,105 +59,31 @@ def summon_menu(classes, material, spirit, tome):
                  '\t5 - Arbalist\n'
                  '\t0 - Go Back\n'
                  '\t>>> ')
-    quant_msg = ('Choose an option:\n'
-                '\t1 - Summon 1x\n'
-                '\t2 - Summon 10x\n'
-                '\t3 - Summon 100x\n'
-                '\t0 - Go Back\n'
-                '\t>>> ')
-    material.sort()
-    spirit.sort()
-    for i in range(len(tome)):
-        tome[i].sort()
     while (c := input(summon_msg)) != '0':
         try:
             c = int(c)
         except ValueError:
             print('You must enter a number!\n')
             continue
-        summoned_items = defaultdict(lambda: 0)
         if c == 1:
             print('\n>> Dragon Material Summon<<')
-            low, high = 0, material[-1][0]
-            try:
-                quant = int(input(quant_msg))
-            except:
-                print('\tInvalid option!\n')
-                continue
-            if quant <= 0 or quant > 3:
-                if quant != 0:
-                    print('\tInvalid option!\n')
-                continue
-            x = [1, 10, 100][quant - 1]
-            for i in range(x):
-                r = random.uniform(low, high)  # generate a new random number
-                for chance, item in material:
-                    if r <= chance:  # compare the random number with the summon chances
-                        summoned_items[f'{item}'] += 1
-                        break
-            print(f'\n***Summon {x}x Results***')
-            for item in summoned_items:
-                if summoned_items[item] > 0:
-                    print(f'   -{item} {summoned_items[item]}x')
-            print()
-
+            summon(data['Dragon Material'])
         elif c == 2:
             print('\n>> Spirit Summon<<')
-            low, high = 0, spirit[-1][0]
-            try:
-                quant = int(input(quant_msg))
-            except:
-                print('\tInvalid option!\n')
-                continue
-            if quant <= 0 or quant > 3:
-                if quant != 0:
-                    print('\tInvalid option!\n')
-                continue
-            x = [1, 10, 100][quant - 1]
-            for i in range(x):
-                r = random.uniform(low, high)  # generate a new random number
-                for chance, item in spirit:
-                    if r <= chance:  # compare the random number with the summon chances
-                        summoned_items[f'{item}'] += 1
-                        break
-            print(f'\n***Summon {x}x Results***')
-            for item in summoned_items:
-                if summoned_items[item] > 0:
-                    print(f'   -{item} {summoned_items[item]}x')
-            print()
-
+            summon(data['Spirit'])
         elif c == 3:
+            print('\n>> Legend Spirit Summon<<')
+            summon(data['Legend Spirit Summon'])
+        elif c == 4:
             print('\n>> Skill Tome Summon<<')
             try:
-                cl = int(input(class_msg))
-            except:
-                print('\tInvalid option!\n')
-                continue
-            if 1 <= cl <= len(classes):
-                print(f'\n>>> {classes[cl - 1]} Skill Tome')
-                low, high = 0, tome[cl - 1][-1][0]
-                try:
-                    quant = int(input(quant_msg))
-                except:
-                    print('\tInvalid option!\n')
-                    continue
-                if quant <= 0 or quant > 3:
-                    if quant != 0:
-                        print('\tInvalid option!\n')
-                    continue
-                x = [1, 10, 100][quant - 1]
-                for i in range(x):
-                    r = random.uniform(low, high)  # generate a new random number
-                    for chance, item in tome[cl - 1]:
-                        if r <= chance:  # compare the random number with the summon chances
-                            summoned_items[f'{item}'] += 1
-                            break
-                print(f'\n***Summon {x}x Results***')
-                for item in summoned_items:
-                    if summoned_items[item] > 0:
-                        print(f'   -{item} {summoned_items[item]}x')
-                print()
-                
+                cls = int(input(class_msg))
+                if cls <= 0 or cls > 5:
+                    raise ValueError('Invalid option!')
+            except ValueError as e:
+                print(f'\t{e}\n')
+            else:
+                summon(data['Skill Tome'], class_id[cls])
         else:
             print('Invalid option!\n')
 

@@ -1,9 +1,12 @@
+from collections import defaultdict
+
 from selenium import webdriver
 from selenium.common.exceptions import (NoSuchWindowException,
                                         WebDriverException)
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
+from item_classes import Category
 from scraper import scrape
 from serializer import deserialize
 from summon import summon_menu
@@ -12,7 +15,7 @@ from utils import print_data
 
 def main():
     print('~~~~ MIR4 Summoning ~~~~')
-    data = []
+    data = defaultdict(Category)
     summon_msg = ('Choose an option:\n'
                   '\t1 - Summoning Menu\n'
                   '\t2 - Update Summoning Data\n'
@@ -31,7 +34,7 @@ def main():
             else:
                 print(f'Failed to deserialize data.json, try updating summoning data first!\n')
         elif c == 2:
-            print('Updating summoning data!\n')
+            print('Updating summoning data! This might take a while...\n')
             service = Service(ChromeDriverManager().install())
             website = 'https://forum.mir4global.com/post/67'
             try:
@@ -46,9 +49,11 @@ def main():
                 scrape(browser)
                 browser.quit()
         elif c == 3:
-            print('Displaying data!\n')
-            print_data(data)
-
+            if deserialize(data):
+                print('Displaying data!\n')
+                print_data(data)
+            else:
+                print(f'Failed to deserialize data.json, try updating summoning data first!\n')
         else:
             print('Invalid option!\n')
     else:
